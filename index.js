@@ -24,7 +24,10 @@ module.exports = function(content) {
       engine = false,
       withImports = false,
       attributes = ['img:src'],
-      parseDynamicRoutes = false;
+      parseDynamicRoutes = false,
+      isRelevantTagAttr = function (tag, attr, allAttr) {
+        return attributes.indexOf(tag + ':' + attr) != -1;
+      };
 
   // Parse arguments
   var query = this.query instanceof Object ? this.query : loaderUtils.parseQuery(this.query);
@@ -74,6 +77,11 @@ module.exports = function(content) {
     if (query.parseDynamicRoutes !== undefined) {
       parseDynamicRoutes = !!query.parseDynamicRoutes;
     }
+
+    // Allow overriding the `isRelevantTagAttr` function for custom behaviour
+    if (typeof query.isRelevantTagAttr === 'function') {
+      isRelevantTagAttr = query.isRelevantTagAttr;
+    }
   }
 
   // Include additional macros
@@ -90,9 +98,7 @@ module.exports = function(content) {
   }
 
   // Parse attributes
-  var attributesContext = attributeParser(content, function (tag, attr) {
-    return attributes.indexOf(tag + ':' + attr) != -1;
-  }, 'ATTRIBUTE', root, parseDynamicRoutes);
+  var attributesContext = attributeParser(content, isRelevantTagAttr, 'ATTRIBUTE', root, parseDynamicRoutes);
   content = attributesContext.replaceMatches(content);
 
   // Compile template
